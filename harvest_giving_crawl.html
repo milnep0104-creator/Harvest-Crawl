@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Harvest & Giving Crawl - Traverse City</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for Web Audio Synthesis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pumpkin: '#D97706',
+                        cider: '#9A3412',
+                        amber: '#B45309',
+                        harvest: '#451A03',
+                        sage: '#4D7C0F',
+                        cream: '#FEF3C7',
+                        warmBg: '#FFFBEB'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        game: ['Fredoka', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #FFFBEB; 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-game { font-family: 'Fredoka', cursive, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #FEF3C7; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
+        
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0) scale(var(--turkey-scale, 1)); }
+            50% { transform: translateY(-8px) scale(var(--turkey-scale, 1)); }
+        }
+        .animate-gobble {
+            animation: bounce-slow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden text-harvest select-none">
+
+    <!-- Header / Top Bar (Mobile Optimized) -->
+    <header class="bg-gradient-to-r from-cider via-pumpkin to-amber text-white p-3 md:p-4 shadow-lg flex-shrink-0 z-20">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-amber-900/40 rounded-xl border border-amber-300/30 flex-shrink-0">
+                    <i class="fa-solid fa-feather text-xl text-amber-200"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-extrabold tracking-tight leading-tight">
+                        Harvest Crawl 🍁
+                    </h1>
+                    <p class="text-[11px] sm:text-xs text-amber-100/90 font-medium">1–5 PM • Traverse City</p>
+                </div>
+            </div>
+            
+            <!-- Overall Progress Badges -->
+            <div class="flex items-center gap-2 sm:gap-4 bg-amber-900/40 px-2.5 py-1.5 rounded-xl border border-amber-200/20">
+                <div class="text-center">
+                    <p class="text-[9px] text-amber-200 uppercase font-semibold">Stops</p>
+                    <p class="text-sm sm:text-base font-bold text-white"><span id="visited-count">0</span>/<span id="total-stops-count">8</span></p>
+                </div>
+                <div class="h-6 w-px bg-amber-200/30"></div>
+                <div class="text-center">
+                    <p class="text-[9px] text-amber-200 uppercase font-semibold">Raised</p>
+                    <p class="text-sm sm:text-base font-bold text-emerald-300">$<span id="total-raised">0</span></p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container (Mobile Flex Layout) -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-2 sm:p-3 gap-2.5 relative">
+
+        <!-- GAME TAB PANEL (Turkey Feast) -->
+        <section id="tab-game" class="w-full md:w-7/12 lg:w-8/12 flex flex-col gap-2.5 h-full overflow-hidden flex-1">
+            <!-- Interactive Turkey Feast Game Graphics -->
+            <div class="flex-1 bg-gradient-to-b from-amber-100 via-amber-50 to-orange-100 p-3 sm:p-4 rounded-2xl shadow-sm border-2 border-amber-300 relative overflow-hidden flex flex-col items-center justify-between min-h-[280px]">
+                
+                <!-- Game Header Banner -->
+                <div class="w-full flex justify-between items-center bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-200/80 shadow-sm z-10">
+                    <div>
+                        <h2 class="font-game text-base sm:text-lg text-cider font-bold flex items-center gap-1.5">
+                            Gobbles the Turkey 🦃
+                        </h2>
+                        <p class="text-[10px] sm:text-xs text-amber-900 font-medium">Tap turkey or visit stops to grow!</p>
+                    </div>
+                    <div>
+                        <span id="turkey-weight-tag" class="bg-amber-800 text-amber-100 font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-sm">
+                            5.0 lbs
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animated Interactive Turkey Visual Container -->
+                <div class="relative flex-1 w-full flex items-center justify-center my-1">
+                    <!-- Dynamic Fall Background Elements -->
+                    <div class="absolute inset-0 flex justify-between items-center opacity-25 pointer-events-none px-4 text-2xl">
+                        <span>🍂</span><span>🍁</span><span>🥧</span><span>🍺</span><span>🍷</span>
+                    </div>
+
+                    <!-- Turkey Graphics Avatar -->
+                    <div id="turkey-container" class="relative transition-all duration-300 flex flex-col items-center justify-center cursor-pointer active:scale-95" onclick="triggerTurkeySound()">
+                        
+                        <!-- Speech Bubble -->
+                        <div id="turkey-bubble" class="absolute -top-9 bg-white border-2 border-amber-400 text-amber-950 font-game text-[11px] font-bold px-2.5 py-1 rounded-2xl shadow-md z-20 transition-all duration-200 text-center whitespace-nowrap">
+                            "Gobble! Visit stops to feed me!"
+                        </div>
+
+                        <!-- Turkey SVG Graphic -->
+                        <div id="turkey-avatar" class="animate-gobble relative transition-transform duration-300">
+                            <svg id="turkey-svg" width="160" height="160" viewBox="0 0 200 200" class="drop-shadow-lg transition-all duration-300 max-w-[150px] sm:max-w-[180px]">
+                                <!-- Tail Feathers -->
+                                <g id="tail-feathers">
+                                    <path d="M 100 110 L 40 40 Q 30 20 50 20 Z" fill="#9A3412" />
+                                    <path d="M 100 110 L 65 25 Q 60 5 80 10 Z" fill="#D97706" />
+                                    <path d="M 100 110 L 100 15 Q 100 -5 115 15 Z" fill="#B45309" />
+                                    <path d="M 100 110 L 135 25 Q 140 5 120 10 Z" fill="#D97706" />
+                                    <path d="M 100 110 L 160 40 Q 170 20 150 20 Z" fill="#9A3412" />
+                                </g>
+                                
+                                <!-- Body -->
+                                <ellipse id="turkey-body" cx="100" cy="125" rx="55" ry="45" fill="#451A03" stroke="#291002" stroke-width="4" />
+                                <ellipse cx="100" cy="130" rx="40" ry="30" fill="#B45309" opacity="0.4" />
+
+                                <!-- Wings -->
+                                <path d="M 50 125 Q 35 110 55 140 Z" fill="#9A3412" />
+                                <path d="M 150 125 Q 165 110 145 140 Z" fill="#9A3412" />
+
+                                <!-- Feet -->
+                                <path d="M 80 168 L 75 190 M 75 190 L 68 195 M 75 190 L 80 196 M 75 190 L 83 192" stroke="#D97706" stroke-width="5" stroke-linecap="round" />
+                                <path d="M 120 168 L 125 190 M 125 190 L 118 195 M 125 190 L 130 196 M 125 190 L 133 192" stroke="#D97706" stroke-width="5" stroke-linecap="round" />
+
+                                <!-- Head & Neck -->
+                                <path d="M 100 115 Q 100 70 100 60 Q 100 45 100 45" stroke="#7C2D12" stroke-width="24" stroke-linecap="round" />
+                                <circle cx="100" cy="45" r="20" fill="#7C2D12" />
+
+                                <!-- Snood / Wattle -->
+                                <path d="M 104 48 Q 112 55 108 68 Q 102 72 100 62" fill="#DC2626" />
+
+                                <!-- Beak -->
+                                <polygon points="98,42 118,48 98,54" fill="#F59E0B" stroke="#B45309" stroke-width="2" />
+
+                                <!-- Eyes -->
+                                <circle cx="92" cy="40" r="4.5" fill="#FFFFFF" />
+                                <circle cx="93" cy="40" r="2.5" fill="#000000" />
+
+                                <!-- Party Pilgrim Hat -->
+                                <g id="pilgrim-hat" class="transition-opacity duration-300" opacity="0">
+                                    <rect x="75" y="18" width="50" height="8" rx="2" fill="#1F2937" />
+                                    <rect x="83" y="-5" width="34" height="24" fill="#1F2937" />
+                                    <rect x="83" y="12" width="34" height="6" fill="#D97706" />
+                                    <rect x="95" y="10" width="10" height="10" fill="#F59E0B" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feast Meter & Touch Action Buttons -->
+                <div class="w-full bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-amber-200 flex flex-col gap-2 z-10 shadow-sm">
+                    <div class="flex justify-between items-center text-[11px] font-bold text-amber-900">
+                        <span>Feast Meter</span>
+                        <span id="feast-percentage">0% Full</span>
+                    </div>
+                    <div class="w-full bg-amber-100 h-3 rounded-full overflow-hidden border border-amber-200">
+                        <div id="feast-progress-bar" class="bg-gradient-to-r from-pumpkin via-amber-500 to-emerald-500 h-full w-0 transition-all duration-300 rounded-full"></div>
+                    </div>
+                    <!-- Touch Action Buttons -->
+                    <div class="grid grid-cols-3 gap-1.5 mt-0.5">
+                        <button onclick="feedTurkeyBonus('Feast')" class="py-2 bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-950 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 min-h-[44px]">
+                            🍺 Drink
+                        </button>
+                        <button onclick="feedTurkeyBonus('Snack')" class="py-2 bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-950 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 min-h-[44px]">
+                            🌮 Snack
+                        </button>
+                        <button onclick="triggerTurkeySound()" class="py-2 bg-pumpkin hover:bg-cider active:bg-amber-800 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1 min-h-[44px]">
+                            🔊 Gobble!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ITINERARY STOPS TAB PANEL -->
+        <section id="tab-stops" class="w-full md:w-5/12 lg:w-4/12 flex-col gap-2 h-full overflow-hidden hidden md:flex">
+            <!-- Header Controls -->
+            <div class="bg-white p-2.5 rounded-xl shadow-sm border border-amber-200 flex justify-between items-center flex-shrink-0">
+                <h2 class="font-bold text-base text-cider flex items-center gap-1.5">
+                    <i class="fa-solid fa-route text-pumpkin"></i> Itinerary
+                </h2>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="openAddStopModal()" class="text-xs text-white bg-pumpkin hover:bg-cider font-bold flex items-center gap-1 px-2.5 py-1.5 rounded-lg shadow-sm transition active:scale-95 min-h-[36px]">
+                        <i class="fa-solid fa-plus"></i> Add Stop
+                    </button>
+                    <button onclick="resetProgress()" class="text-xs text-amber-800 hover:text-cider font-medium flex items-center gap-1 bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-200 transition min-h-[36px]">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- List of Stops -->
+            <div id="stops-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 pr-0.5">
+                <!-- Injected dynamically -->
+            </div>
+        </section>
+
+        <!-- SOCIAL FEED TAB PANEL -->
+        <section id="tab-feed" class="w-full flex-col gap-2 h-full overflow-hidden hidden">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-amber-200 flex-1 flex flex-col">
+                <div class="flex justify-between items-center pb-2 border-b border-amber-100 mb-2 flex-shrink-0">
+                    <h2 class="font-bold text-base text-harvest flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-rose-500"></i> Social Activity Log
+                    </h2>
+                    <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Live Crawl</span>
+                </div>
+                <div id="feed-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 text-xs">
+                    <!-- Feed messages injected here -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MOBILE STICKY BOTTOM NAVIGATION BAR -->
+    <nav class="md:hidden bg-white border-t border-amber-200 shadow-lg flex justify-around items-center p-1.5 z-30 flex-shrink-0">
+        <button id="nav-btn-game" onclick="switchMobileTab('game')" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl font-bold text-xs text-pumpkin">
+            <i class="fa-solid fa-gamepad text-lg"></i>
+            <span class="text-[10px] mt-0.5">Turkey</span>
+        </button>
+        <button id="nav-btn-stops" onclick="switchMobileTab('stops')" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl font-bold text-xs text-amber-700">
+            <i class="fa-solid fa-list-check text-lg"></i>
+            <span class="text-[10px] mt-0.5">Stops</span>
+        </button>
+        <button id="nav-btn-feed" onclick="switchMobileTab('feed')" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl font-bold text-xs text-amber-700">
+            <i class="fa-solid fa-users text-lg"></i>
+            <span class="text-[10px] mt-0.5">Feed</span>
+        </button>
+    </nav>
+
+    <!-- Modal for Logging Donation / Visit -->
+    <div id="checkin-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-amber-50 rounded-t-3xl sm:rounded-2xl p-5 max-w-md w-full border border-amber-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-3">
+                <h3 id="modal-title" class="font-bold text-base text-harvest flex items-center gap-2">
+                    <i class="fa-solid fa-basket-shopping text-pumpkin"></i> Check-in & Donation
+                </h3>
+                <button onclick="closeModal()" class="text-amber-800 font-bold text-2xl p-1">&times;</button>
+            </div>
+            
+            <form id="checkin-form" onsubmit="handleCheckinSubmit(event)">
+                <input type="hidden" id="modal-stop-id">
+                
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Food / Drinks Sampled</label>
+                    <input type="text" id="modal-items" placeholder="e.g., Cider, Tacos, Pie" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Donation Collected ($)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-amber-700 font-bold">$</span>
+                        <input type="number" id="modal-donation" min="0" step="1" placeholder="0" class="w-full pl-7 pr-3 py-3 bg-white border border-amber-300 rounded-xl text-sm font-bold text-emerald-800 focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Group Note / Shoutout</label>
+                    <textarea id="modal-note" rows="2" placeholder="e.g., Great atmosphere! Donated $20 to local food bank." class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex gap-2 pb-2">
+                    <button type="button" onclick="closeModal()" class="w-1/2 py-3 border border-amber-300 text-amber-900 rounded-xl font-bold text-xs hover:bg-amber-100 transition min-h-[44px]">Cancel</button>
+                    <button type="submit" class="w-1/2 py-3 bg-gradient-to-r from-pumpkin to-cider text-white rounded-xl font-bold text-xs shadow-md transition min-h-[44px]">Save Check-In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Custom Stop On-the-Fly -->
+    <div id="addstop-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-amber-50 rounded-t-3xl sm:rounded-2xl p-5 max-w-md w-full border border-amber-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-base text-harvest flex items-center gap-2">
+                    <i class="fa-solid fa-location-plus text-pumpkin"></i> Add Custom Stop
+                </h3>
+                <button onclick="closeAddStopModal()" class="text-amber-800 font-bold text-2xl p-1">&times;</button>
+            </div>
+            
+            <form id="addstop-form" onsubmit="handleAddStopSubmit(event)">
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Place Name *</label>
+                    <input type="text" id="add-name" required placeholder="e.g., Local Taproom" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Category</label>
+                        <input type="text" id="add-category" placeholder="e.g., Pub" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Time Window</label>
+                        <input type="text" id="add-time" placeholder="e.g., 2:30 PM" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Address / Location</label>
+                    <input type="text" id="add-address" placeholder="e.g., Front St" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none min-h-[44px]">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">Notes</label>
+                    <textarea id="add-note" rows="2" placeholder="e.g., Bonus stop for snacks!" class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm focus:ring-2 focus:ring-pumpkin focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex gap-2 pb-2">
+                    <button type="button" onclick="closeAddStopModal()" class="w-1/2 py-3 border border-amber-300 text-amber-900 rounded-xl font-bold text-xs hover:bg-amber-100 transition min-h-[44px]">Cancel</button>
+                    <button type="submit" class="w-1/2 py-3 bg-gradient-to-r from-pumpkin to-cider text-white rounded-xl font-bold text-xs shadow-md transition min-h-[44px]">Add Stop</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Default Traverse City Itinerary
+        const DEFAULT_STOPS = [
+            { id: 1, name: "The Dandy", category: "Brunch House", address: "115 E Front St", timeWindow: "1:00 PM - 1:30 PM", openHours: "8am - 3pm", note: "Closes early at 3pm! Great starting point.", type: "walk" },
+            { id: 2, name: "The Flying Noodle", category: "Italian Pasta House", address: "136 E Front St", timeWindow: "1:30 PM - 2:00 PM", openHours: "11am - 9pm", note: "Directly across Front Street.", type: "walk" },
+            { id: 3, name: "Mammoth Distilling", category: "Cocktail Lounge", address: "332 E Front St", timeWindow: "2:00 PM - 2:30 PM", openHours: "12pm - 12am", note: "2 blocks east on Front St.", type: "walk" },
+            { id: 4, name: "Barrio Tacos", category: "Tacos & Tequila", address: "305 W Front St", timeWindow: "2:35 PM - 3:00 PM", openHours: "12pm - 11pm", note: "Walk west down Front St.", type: "walk" },
+            { id: 5, name: "Gypsy Spirits", category: "Tasting Room", address: "309 W Front St", timeWindow: "3:00 PM - 3:20 PM", openHours: "Opens at 2pm", note: "Right next door to Barrio.", type: "walk" },
+            { id: 6, name: "Nittolo's Little Italy", category: "Italian & Pizzeria", address: "155 Garland St #101", timeWindow: "3:25 PM - 3:45 PM", openHours: "Opens at 3pm", note: "3-minute walk north into Warehouse District.", type: "walk" },
+            { id: 7, name: "Colibri Wine Bar", category: "Wine & Small Plates", address: "414 E Eighth St", timeWindow: "4:00 PM - 4:25 PM", openHours: "Opens at 4pm", note: "3-min drive or 12-min walk south.", type: "drive" },
+            { id: 8, name: "Right Brain Brewery", category: "Craft Brewery", address: "225 E Sixteenth St", timeWindow: "4:30 PM - 5:00 PM", openHours: "11am - 10pm", note: "3-min drive south from Colibri.", type: "drive" }
+        ];
+
+        let customStops = JSON.parse(localStorage.getItem('harvestCrawlCustomStops') || '[]');
+        let STOPS = [...DEFAULT_STOPS, ...customStops];
+        let visitedState = JSON.parse(localStorage.getItem('harvestCrawlVisited') || '{}');
+        let bonusFeastCount = parseInt(localStorage.getItem('harvestCrawlBonusFeast') || '0', 10);
+        let feedLogs = JSON.parse(localStorage.getItem('harvestCrawlFeed') || JSON.stringify([
+            { text: "🍂 Welcome to the Harvest Crawl! Tap Gobble! or feed Gobbles to get started.", time: "1:00 PM", icon: "fa-leaf", color: "text-amber-600" }
+        ]));
+
+        const GOBBLE_PHRASES = [
+            '"Gobble! Thank you for the treats!"',
+            '"Gobble gobble! Keep feeding me!"',
+            '"Yum! Happy Thanksgiving!"',
+            '"Gobble! Best crawl ever!"',
+            '"More pie and cider please!"'
+        ];
+
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function initAudio() {
+            getAudioContext();
+        }
+
+        // Realistic Synthesized Wild Turkey Call
+        function playGobbleSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                // Yelps Intro
+                [0.0, 0.12, 0.24].forEach((tOffset) => {
+                    const startTime = now + tOffset;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const filter = ctx.createBiquadFilter();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(450, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, startTime + 0.03);
+                    osc.frequency.exponentialRampToValueAtTime(380, startTime + 0.08);
+
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1100, startTime);
+                    filter.Q.setValueAtTime(4.0, startTime);
+
+                    gain.gain.setValueAtTime(0.001, startTime);
+                    gain.gain.linearRampToValueAtTime(0.35, startTime + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.09);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.095);
+                });
+
+                // Gargle Sweep
+                const gobbleStart = now + 0.38;
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const mainGain = ctx.createGain();
+                const throatFilter = ctx.createBiquadFilter();
+
+                const modOsc = ctx.createOscillator();
+                const modGain = ctx.createGain();
+
+                modOsc.type = 'sine';
+                modOsc.frequency.setValueAtTime(24, gobbleStart);
+                modGain.gain.setValueAtTime(0.35, gobbleStart);
+
+                osc1.type = 'sawtooth';
+                osc2.type = 'triangle';
+
+                const pitches = [580, 720, 640, 790, 610, 750, 560, 690, 520, 650, 480, 590, 430, 510, 360, 280];
+                const step = 0.024;
+
+                pitches.forEach((freq, i) => {
+                    const stepTime = gobbleStart + (i * step);
+                    osc1.frequency.setValueAtTime(freq, stepTime);
+                    osc2.frequency.setValueAtTime(freq * 0.5, stepTime);
+                });
+
+                throatFilter.type = 'bandpass';
+                throatFilter.frequency.setValueAtTime(950, gobbleStart);
+                throatFilter.frequency.linearRampToValueAtTime(650, gobbleStart + 0.4);
+                throatFilter.Q.setValueAtTime(3.2, gobbleStart);
+
+                const duration = pitches.length * step;
+                mainGain.gain.setValueAtTime(0.001, gobbleStart);
+                mainGain.gain.linearRampToValueAtTime(0.45, gobbleStart + 0.04);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, gobbleStart + duration + 0.08);
+
+                modOsc.connect(modGain);
+                modGain.connect(mainGain.gain);
+
+                osc1.connect(throatFilter);
+                osc2.connect(throatFilter);
+                throatFilter.connect(mainGain);
+                mainGain.connect(ctx.destination);
+
+                modOsc.start(gobbleStart);
+                osc1.start(gobbleStart);
+                osc2.start(gobbleStart);
+
+                const stopTime = gobbleStart + duration + 0.09;
+                modOsc.stop(stopTime);
+                osc1.stop(stopTime);
+                osc2.stop(stopTime);
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
+        }
+
+        function playSnackSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                [440, 554.37, 659.25].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + (i * 0.08));
+                    gain.gain.setValueAtTime(0.2, now + (i * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.08) + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + (i * 0.08));
+                    osc.stop(now + (i * 0.08) + 0.15);
+                });
+            } catch (e) {}
+        }
+
+        function playCelebrationSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + (i * 0.1));
+                    gain.gain.setValueAtTime(0.25, now + (i * 0.1));
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.1) + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + (i * 0.1));
+                    osc.stop(now + (i * 0.1) + 0.25);
+                });
+            } catch (e) {}
+        }
+
+        window.onload = function() {
+            renderStops();
+            updateStats();
+            renderFeed();
+            updateTurkeyGraphics();
+            document.body.addEventListener('click', initAudio, { once: true });
+        };
+
+        function switchMobileTab(tab) {
+            const gameTab = document.getElementById('tab-game');
+            const stopsTab = document.getElementById('tab-stops');
+            const feedTab = document.getElementById('tab-feed');
+
+            const btnGame = document.getElementById('nav-btn-game');
+            const btnStops = document.getElementById('nav-btn-stops');
+            const btnFeed = document.getElementById('nav-btn-feed');
+
+            [gameTab, stopsTab, feedTab].forEach(el => el.classList.add('hidden'));
+            [btnGame, btnStops, btnFeed].forEach(btn => {
+                btn.classList.remove('text-pumpkin');
+                btn.classList.add('text-amber-700');
+            });
+
+            if (tab === 'game') {
+                gameTab.classList.remove('hidden');
+                btnGame.classList.add('text-pumpkin');
+                btnGame.classList.remove('text-amber-700');
+            } else if (tab === 'stops') {
+                stopsTab.classList.remove('hidden');
+                stopsTab.classList.add('flex');
+                btnStops.classList.add('text-pumpkin');
+                btnStops.classList.remove('text-amber-700');
+            } else if (tab === 'feed') {
+                feedTab.classList.remove('hidden');
+                feedTab.classList.add('flex');
+                btnFeed.classList.add('text-pumpkin');
+                btnFeed.classList.remove('text-amber-700');
+            }
+        }
+
+        function renderStops() {
+            const container = document.getElementById('stops-container');
+            container.innerHTML = '';
+            document.getElementById('total-stops-count').innerText = STOPS.length;
+
+            STOPS.forEach((stop) => {
+                const isVisited = !!visitedState[stop.id];
+                const data = visitedState[stop.id] || {};
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-2xl border transition-all ${
+                    isVisited 
+                        ? 'bg-emerald-50/90 border-emerald-300 shadow-sm' 
+                        : 'bg-white border-amber-200 shadow-sm'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start gap-2">
+                            <span class="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                isVisited ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                            }">${stop.id}</span>
+                            <div>
+                                <h3 class="font-bold text-sm text-harvest leading-tight flex items-center gap-1">
+                                    ${stop.name}
+                                    ${isVisited ? '<i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>' : ''}
+                                </h3>
+                                <p class="text-[11px] text-amber-800 font-medium">${stop.category} • <span class="text-amber-950 font-semibold">${stop.address}</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 flex items-center justify-between text-[11px] bg-amber-50/80 p-1.5 rounded-xl border border-amber-100">
+                        <span class="font-semibold text-cider"><i class="fa-regular fa-clock mr-1"></i>${stop.timeWindow}</span>
+                        <span class="text-amber-800"><i class="fa-solid fa-door-open mr-1"></i>${stop.openHours}</span>
+                    </div>
+
+                    ${isVisited ? `
+                        <div class="mt-2 pt-1.5 border-t border-emerald-200 text-xs flex flex-col gap-0.5">
+                            ${data.donation ? `<div class="font-bold text-emerald-800"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Collected: $${data.donation}</div>` : ''}
+                            ${data.items ? `<div class="text-emerald-900"><i class="fa-solid fa-utensils mr-1"></i> Sampled: ${data.items}</div>` : ''}
+                            ${data.note ? `<div class="text-emerald-800 italic bg-white/80 p-1.5 rounded-lg border border-emerald-100 text-[11px]">"${data.note}"</div>` : ''}
+                        </div>
+                    ` : ''}
+
+                    <div class="mt-2.5">
+                        <button onclick="openCheckinModal(${stop.id})" class="w-full text-xs py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 min-h-[40px] ${
+                            isVisited 
+                                ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200' 
+                                : 'bg-pumpkin text-white hover:bg-cider shadow-sm'
+                        }">
+                            <i class="fa-solid ${isVisited ? 'fa-pen' : 'fa-check'}"></i>
+                            ${isVisited ? 'Edit Check-In' : 'Mark Visited & Feed Turkey'}
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function updateTurkeyGraphics() {
+            const visitedCount = Object.keys(visitedState).length;
+            const totalStops = STOPS.length;
+            const stopRatio = visitedCount / Math.max(totalStops, 1);
+            const bonusRatio = bonusFeastCount * 0.05;
+            const totalProgressRatio = Math.min(stopRatio + bonusRatio, 1.5);
+            
+            const scale = 1 + (totalProgressRatio * 0.45);
+            const weight = 5 + (visitedCount * 3.5) + (bonusFeastCount * 1.5);
+
+            const turkeyAvatar = document.getElementById('turkey-avatar');
+            if (turkeyAvatar) {
+                turkeyAvatar.style.setProperty('--turkey-scale', scale);
+                turkeyAvatar.style.transform = `scale(${scale})`;
+            }
+
+            document.getElementById('turkey-weight-tag').innerText = `${weight.toFixed(1)} lbs`;
+            const displayPercentage = Math.round(Math.min(totalProgressRatio * 100, 100));
+            document.getElementById('feast-percentage').innerText = `${displayPercentage}% Full`;
+            document.getElementById('feast-progress-bar').style.width = `${displayPercentage}%`;
+
+            const pilgrimHat = document.getElementById('pilgrim-hat');
+            const totalScore = visitedCount + Math.floor(bonusFeastCount / 2);
+
+            if (pilgrimHat) {
+                if (totalScore >= 5) pilgrimHat.setAttribute('opacity', '1');
+                else if (totalScore >= 3) pilgrimHat.setAttribute('opacity', '0.6');
+                else pilgrimHat.setAttribute('opacity', '0');
+            }
+        }
+
+        function triggerTurkeySound() {
+            initAudio();
+            playGobbleSound();
+            const bubble = document.getElementById('turkey-bubble');
+            const randomPhrase = GOBBLE_PHRASES[Math.floor(Math.random() * GOBBLE_PHRASES.length)];
+            if (bubble) {
+                bubble.innerText = randomPhrase;
+            }
+        }
+
+        function feedTurkeyBonus(type) {
+            initAudio();
+            playSnackSound();
+            bonusFeastCount++;
+            localStorage.setItem('harvestCrawlBonusFeast', bonusFeastCount);
+
+            feedLogs.unshift({
+                text: `🦃 Gobbles had a ${type.toLowerCase()} (+1.5 lbs)!`,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                icon: type === 'Feast' ? "fa-beer-mug-empty" : "fa-utensils",
+                color: "text-pumpkin"
+            });
+            localStorage.setItem('harvestCrawlFeed', JSON.stringify(feedLogs));
+            
+            renderFeed();
+            updateTurkeyGraphics();
+        }
+
+        function openCheckinModal(id) {
+            const stop = STOPS.find(s => s.id === id);
+            if (!stop) return;
+            document.getElementById('modal-stop-id').value = id;
+            document.getElementById('modal-title').innerText = `Check-In: ${stop.name}`;
+            const existingData = visitedState[id] || {};
+            document.getElementById('modal-items').value = existingData.items || '';
+            document.getElementById('modal-donation').value = existingData.donation || '';
+            document.getElementById('modal-note').value = existingData.note || '';
+            document.getElementById('checkin-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('checkin-modal').classList.add('hidden');
+        }
+
+        function openAddStopModal() {
+            document.getElementById('addstop-modal').classList.remove('hidden');
+        }
+
+        function closeAddStopModal() {
+            document.getElementById('addstop-modal').classList.add('hidden');
+        }
+
+        function handleCheckinSubmit(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('modal-stop-id').value);
+            const items = document.getElementById('modal-items').value.trim();
+            const donation = parseFloat(document.getElementById('modal-donation').value) || 0;
+            const note = document.getElementById('modal-note').value.trim();
+
+            const stop = STOPS.find(s => s.id === id);
+            visitedState[id] = { items, donation, note, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+            localStorage.setItem('harvestCrawlVisited', JSON.stringify(visitedState));
+
+            feedLogs.unshift({
+                text: `🎉 Visited ${stop.name}${donation ? ` & raised $${donation}` : ''}!`,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                icon: "fa-circle-check",
+                color: "text-emerald-600"
+            });
+            localStorage.setItem('harvestCrawlFeed', JSON.stringify(feedLogs));
+
+            renderStops();
+            updateStats();
+            renderFeed();
+            updateTurkeyGraphics();
+            
+            playCelebrationSound();
+            setTimeout(playGobbleSound, 350);
+            closeModal();
+        }
+
+        function handleAddStopSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('add-name').value.trim();
+            const category = document.getElementById('add-category').value.trim() || 'Custom Stop';
+            const timeWindow = document.getElementById('add-time').value.trim() || 'Bonus Stop';
+            const address = document.getElementById('add-address').value.trim() || 'Traverse City';
+            const note = document.getElementById('add-note').value.trim() || 'Added during crawl!';
+
+            const newStop = {
+                id: Date.now(),
+                name,
+                category,
+                address,
+                timeWindow,
+                openHours: "Open Now",
+                note,
+                type: "walk",
+                isCustom: true
+            };
+
+            customStops.push(newStop);
+            STOPS.push(newStop);
+
+            localStorage.setItem('harvestCrawlCustomStops', JSON.stringify(customStops));
+
+            feedLogs.unshift({
+                text: `📍 Added new stop: ${name}!`,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                icon: "fa-location-plus",
+                color: "text-purple-600"
+            });
+            localStorage.setItem('harvestCrawlFeed', JSON.stringify(feedLogs));
+
+            renderStops();
+            updateStats();
+            renderFeed();
+            updateTurkeyGraphics();
+            closeAddStopModal();
+            document.getElementById('addstop-form').reset();
+        }
+
+        function renderFeed() {
+            const feedContainer = document.getElementById('feed-container');
+            feedContainer.innerHTML = '';
+            feedLogs.forEach(log => {
+                const item = document.createElement('div');
+                item.className = 'flex items-start gap-2 p-2 rounded-xl bg-amber-50/80 border border-amber-100/80';
+                item.innerHTML = `
+                    <i class="fa-solid ${log.icon || 'fa-leaf'} ${log.color || 'text-pumpkin'} text-xs mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="text-harvest font-medium text-xs">${log.text}</p>
+                        <span class="text-[10px] text-amber-800 font-semibold">${log.time}</span>
+                    </div>
+                `;
+                feedContainer.appendChild(item);
+            });
+        }
+
+        function updateStats() {
+            const visitedKeys = Object.keys(visitedState);
+            document.getElementById('visited-count').innerText = visitedKeys.length;
+            const totalDonation = visitedKeys.reduce((sum, key) => sum + (visitedState[key].donation || 0), 0);
+            document.getElementById('total-raised').innerText = totalDonation.toLocaleString();
+        }
+
+        function resetProgress() {
+            if (confirm("Reset check-ins, custom stops, and turkey growth progress?")) {
+                visitedState = {};
+                customStops = [];
+                bonusFeastCount = 0;
+                STOPS = [...DEFAULT_STOPS];
+                feedLogs = [{ text: "🍁 Progress reset. Ready for another crawl!", time: "Now", icon: "fa-leaf", color: "text-amber-600" }];
+                
+                localStorage.removeItem('harvestCrawlVisited');
+                localStorage.removeItem('harvestCrawlCustomStops');
+                localStorage.removeItem('harvestCrawlBonusFeast');
+                localStorage.removeItem('harvestCrawlFeed');
+                
+                renderStops();
+                updateStats();
+                renderFeed();
+                updateTurkeyGraphics();
+            }
+        }
+    </script>
+</body>
+</html>
